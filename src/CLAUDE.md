@@ -9,19 +9,36 @@ WhatTimeIsIt is a .NET 8.0 library that provides comprehensive DateTime and Date
 ## Solution Structure
 
 - **WhatTimeIsIt**: Core library project containing parsers
-  - Target: .NET 8.0 class library
+  - Targets: `netstandard2.0;netstandard2.1;net8.0` class library
   - Main classes:
-    - `WhatTimeIsIt.DateTimeParser` in `Class1.cs`
+    - `WhatTimeIsIt.DateTimeParser` in `DateTimeParser.cs`
     - `WhatTimeIsIt.DateTimeOffsetParser` in `DateTimeOffsetParser.cs`
-- **Test.Automated**: Console application with comprehensive test suites
-  - Target: .NET 8.0 console executable
-  - Entry point: `Test.Automated.Program.cs`
-  - Test classes: `DateTimeOffsetParserTests.cs`
-  - References the WhatTimeIsIt project
-- **Test.Analysis**: Console application for behavior analysis
-  - Target: .NET 8.0 console executable
-  - Analyzes DateTime vs DateTimeOffset behavior
-  - References the WhatTimeIsIt project
+
+### Testing infrastructure (Touchstone)
+
+Tests are built on [Touchstone](https://github.com/jchristn/touchstone), a runner-agnostic test
+descriptor framework. Test cases are defined **once** as descriptor objects and executed through
+multiple hosts without changing any test logic.
+
+- **Test.Shared**: The single source of truth for all tests
+  - Target: .NET 8.0 class library; references `Touchstone.Core` and the WhatTimeIsIt project
+  - `WhatTimeIsItSuites.All` aggregates every `TestSuiteDescriptor`
+  - `DateTimeParserSuites` / `DateTimeOffsetParserSuites` define the exhaustive positive/negative cases
+  - `Assert` provides runner-agnostic assertion helpers (throwing signals failure)
+- **Test.Automated**: Touchstone CLI runner (console app)
+  - Target: .NET 8.0 executable; references `Touchstone.Cli` and Test.Shared
+  - Runs `ConsoleRunner.RunAsync(WhatTimeIsItSuites.All)`; colored tabular output, non-zero exit on failure
+  - `-- --results <path>` additionally exports JSON results
+- **Test.Xunit**: Touchstone xUnit adapter (theory-driven; one xUnit test per descriptor)
+  - Target: .NET 8.0; references `Touchstone.XunitAdapter` + xUnit + Test.Shared
+- **Test.Nunit**: Touchstone NUnit adapter (TestCaseSource-driven; one NUnit test per descriptor)
+  - Target: .NET 8.0; references `Touchstone.NunitAdapter` + NUnit + Test.Shared
+- **Test.Analysis**: Console application for behavior analysis (NOT a Touchstone test project)
+  - Target: .NET 8.0 executable; references the WhatTimeIsIt project
+  - Prints a comparative DateTime vs DateTimeOffset behavior analysis; retained as a diagnostic tool
+
+> To add or change coverage, edit the descriptors in **Test.Shared** only. All three runners pick up
+> the change automatically. Do not add test logic directly to the runner/adapter projects.
 
 ## Build Commands
 
@@ -39,24 +56,30 @@ dotnet build WhatTimeIsIt.sln -c Release
 
 ## Running Tests
 
-The test suite is a console application (not a unit test framework) that validates all parsing functionality:
+The same Touchstone descriptors (defined in Test.Shared) can be run three ways:
 
 ```bash
-# Run all tests
+# 1. Touchstone CLI runner (colored tabular output, exit code 0/non-zero)
 dotnet run --project Test.Automated\Test.Automated.csproj
+dotnet run --project Test.Automated\Test.Automated.csproj -- --results results.json
 
-# Run tests with Release build
-dotnet run --project Test.Automated\Test.Automated.csproj -c Release
+# 2. xUnit via dotnet test
+dotnet test Test.Xunit\Test.Xunit.csproj
+
+# 3. NUnit via dotnet test
+dotnet test Test.Nunit\Test.Nunit.csproj
+
+# Run every test project in the solution (xUnit + NUnit)
+dotnet test WhatTimeIsIt.sln
 ```
 
-The test application:
-- Exits with code 0 if all tests pass
-- Exits with code 1 if any tests fail
-- Prints detailed test results and failure information to console
+The CLI runner (Test.Automated):
+- Exits with code 0 if all tests pass, non-zero if any fail
+- Prints per-test PASS/FAIL/SKIP results with runtimes and a failure summary
 
 ## Architecture
 
-### DateTimeParser Class (WhatTimeIsIt\Class1.cs)
+### DateTimeParser Class (WhatTimeIsIt\DateTimeParser.cs)
 
 The `DateTimeParser` class is the heart of the library and provides both static and instance methods:
 
@@ -124,43 +147,31 @@ The `DateTimeOffsetParser` class mirrors `DateTimeParser` but returns `DateTimeO
 
 ### Test Suites
 
-**Test.Automated\Program.cs (DateTimeParser):**
-Comprehensive validation covering:
-- Static vs instance methods
-- All supported format patterns (100+ formats)
-- Numeric formats (Unix timestamps, .NET ticks)
-- Timezone handling
-- Precision preservation (up to microseconds)
-- Edge cases (leap years, end-of-year, single digits)
-- Negative cases (invalid inputs)
-- Format property behavior
-- Culture handling (en-US, en-GB, de-DE)
-- Oracle special formats with period separators
-- TryParse method variants
+All test descriptors live in **Test.Shared** and are grouped into `TestSuiteDescriptor`s exposed via
+`WhatTimeIsItSuites.All` (171 cases total, all passing across the CLI, xUnit, and NUnit runners).
 
-**Test.Automated\DateTimeOffsetParserTests.cs:**
-Comprehensive validation covering:
-- Static vs instance methods
-- Timezone offset preservation (verifies offset is preserved, not just converted)
-- All supported format patterns with timezone variations
-- DefaultOffset property behavior
-- Numeric formats (Unix timestamps as UTC, .NET ticks)
-- Precision preservation with timezone offsets
-- Edge cases with timezones
-- Negative cases (invalid inputs)
-- Format property behavior
-- Culture handling
-- TryParse method variants
-- 50 tests total, 90% pass rate (5 failures due to .NET special format specifiers applying local time)
-- Numeric formats (Unix timestamps, .NET ticks)
-- Timezone handling
-- Precision preservation (up to microseconds)
-- Edge cases (leap years, end-of-year, single digits)
-- Negative cases (invalid inputs)
-- Format property behavior
-- Culture handling (en-US, en-GB, de-DE)
-- Oracle special formats with period separators
-- TryParse method variants
+**`Test.Shared\DateTimeParserSuites.cs`** — suites for `DateTimeParser`:
+- `Static` / `Instance` methods, `FormatProperty`, `TryParse` variants
+- `Formats` — every supported precision (7→1 digit), seconds, minutes, date-only, compact, ISO, culture separators
+- `Numeric` — Unix seconds/ms (UTC), .NET ticks (Unspecified), and 8/14-digit compact-vs-Unix disambiguation
+- `Timezone` — zero-offset indicators (`Z`/`+00`/`-00`/`+00:00`) assert `Kind=Utc`; non-zero offsets assert the
+  machine-independent UTC instant (via `ToUniversalTime()`) since .NET converts them to local time
+- `Precision`, `Oracle`, `SqlServer`, `EdgeCases`, `Culture` (en-US/en-GB/de-DE), `Negative` (invalid → `FormatException`, null → `ArgumentNullException`)
+
+**`Test.Shared\DateTimeOffsetParserSuites.cs`** — suites for `DateTimeOffsetParser` (fully deterministic
+because offsets are explicit):
+- `Static` / `Instance` methods, `FormatProperty`, `TryParse` variants
+- `TimezonePreservation` — offsets from `-12:00` to `+14:00` (incl. `+05:30`) preserved, not just converted
+- `Formats` (with/without timezone), `Numeric` (Unix → zero offset, ticks → default offset)
+- `DefaultOffset` behavior (naive input uses the configured offset; explicit offset overrides it)
+- `Precision`, `Oracle`, `EdgeCases`, `Culture`, `Negative`
+
+### Determinism notes for test authors
+
+- `DateTime` equality compares ticks only (ignores `Kind`); assert `Kind` separately when it matters.
+- Never assert a fixed local wall-clock value for a `DateTimeParser` result parsed from a non-zero offset —
+  it depends on the host timezone. Assert `ToUniversalTime()` (the instant) instead.
+- For `DateTimeOffset`, assert both instant and offset (`Assert.OffsetEqual` does both).
 
 ## Development Notes
 
@@ -178,7 +189,7 @@ new DateTime(2024, 1, 15, 14, 30, 45, 123).AddTicks(4560)
 
 ### Nullable Reference Types
 
-The project uses `<Nullable>enable</Nullable>` but includes `#pragma warning disable CS8625` in Class1.cs to suppress warnings about null assignments to the formats array.
+The project uses `<Nullable>enable</Nullable>` but includes `#pragma warning disable CS8625` in DateTimeParser.cs to suppress warnings about null assignments to the formats array.
 
 ### Implicit Usings
 
