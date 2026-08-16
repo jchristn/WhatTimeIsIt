@@ -52,6 +52,20 @@ namespace Test.Shared
                     Assert.OffsetEqual(new DateTimeOffset(2024, 1, 15, 14, 30, 45, TimeSpan.FromHours(3)),
                         DateTimeOffsetParser.ParseString("2024-01-15 14:30:45", DateTimeOffsetParser.DefaultFormats, TimeSpan.FromHours(3)),
                         "custom default offset")),
+
+                Case(s, "tryparse-custom-formats-null-uses-defaults", "TryParseString(input, null, offset, out result) falls back to defaults", () =>
+                {
+                    bool ok = DateTimeOffsetParser.TryParseString("2024-01-15 14:30:45", null!, TimeSpan.FromHours(2), out DateTimeOffset r);
+                    Assert.True(ok, "null formats should use defaults");
+                    Assert.OffsetEqual(new DateTimeOffset(2024, 1, 15, 14, 30, 45, TimeSpan.FromHours(2)), r, "null formats value");
+                }),
+
+                Case(s, "tryparse-custom-formats-empty-uses-defaults", "TryParseString(input, empty, offset, out result) falls back to defaults", () =>
+                {
+                    bool ok = DateTimeOffsetParser.TryParseString("2024-01-15 14:30:45", Array.Empty<string>(), TimeSpan.FromHours(-7), out DateTimeOffset r);
+                    Assert.True(ok, "empty formats should use defaults");
+                    Assert.OffsetEqual(new DateTimeOffset(2024, 1, 15, 14, 30, 45, TimeSpan.FromHours(-7)), r, "empty formats value");
+                }),
             });
         }
 
@@ -333,6 +347,13 @@ namespace Test.Shared
 
                 Case(s, "static-null", "Static TryParseString returns false for null", () =>
                     Assert.False(DateTimeOffsetParser.TryParseString(null!, out _), "null should fail")),
+
+                Case(s, "static-whitespace", "Static TryParseString returns false and MinValue for whitespace", () =>
+                {
+                    bool ok = DateTimeOffsetParser.TryParseString("   ", out DateTimeOffset r);
+                    Assert.False(ok, "whitespace should fail");
+                    Assert.OffsetEqual(DateTimeOffset.MinValue, r, "MinValue for whitespace");
+                }),
 
                 Case(s, "instance-valid", "Instance TryParse preserves offset", () =>
                 {

@@ -54,6 +54,20 @@ namespace Test.Shared
                     Assert.DateTimeEqual(Base, DateTimeParser.ParseString("2024-01-15 14:30:45", Array.Empty<string>()),
                         "empty formats should use defaults")),
 
+                Case(s, "tryparse-custom-formats-null-uses-defaults", "TryParseString(input, null, out result) falls back to defaults", () =>
+                {
+                    bool ok = DateTimeParser.TryParseString("2024-01-15 14:30:45", null!, out DateTime r);
+                    Assert.True(ok, "null formats should use defaults");
+                    Assert.DateTimeEqual(Base, r, "null formats value");
+                }),
+
+                Case(s, "tryparse-custom-formats-empty-uses-defaults", "TryParseString(input, empty, out result) falls back to defaults", () =>
+                {
+                    bool ok = DateTimeParser.TryParseString("2024-01-15 14:30:45", Array.Empty<string>(), out DateTime r);
+                    Assert.True(ok, "empty formats should use defaults");
+                    Assert.DateTimeEqual(Base, r, "empty formats value");
+                }),
+
                 Case(s, "leading-trailing-whitespace", "ParseString trims surrounding whitespace", () =>
                     Assert.DateTimeEqual(Base, DateTimeParser.ParseString("   2024-01-15 14:30:45   "),
                         "whitespace should be trimmed")),
@@ -423,6 +437,13 @@ namespace Test.Shared
 
                 Case(s, "static-empty", "Static TryParseString returns false for empty", () =>
                     Assert.False(DateTimeParser.TryParseString("", out _), "empty should fail")),
+
+                Case(s, "static-whitespace", "Static TryParseString returns false and MinValue for whitespace", () =>
+                {
+                    bool ok = DateTimeParser.TryParseString("   ", out DateTime r);
+                    Assert.False(ok, "whitespace should fail");
+                    Assert.DateTimeEqual(DateTime.MinValue, r, "MinValue for whitespace");
+                }),
 
                 Case(s, "instance-valid", "Instance TryParse succeeds on valid input", () =>
                 {
