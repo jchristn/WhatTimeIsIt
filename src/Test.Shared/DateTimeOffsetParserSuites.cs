@@ -145,6 +145,10 @@ namespace Test.Shared
                 ["2024-01-15 14:30:45"] = new DateTimeOffset(2024, 1, 15, 14, 30, 45, TimeSpan.Zero),
                 ["2024-01-15T14:30:45"] = new DateTimeOffset(2024, 1, 15, 14, 30, 45, TimeSpan.Zero),
 
+                // RFC 1123 (default formats present in the list). 2024-01-15 is a Monday.
+                ["Mon, 15 Jan 2024 14:30:45"] = new DateTimeOffset(2024, 1, 15, 14, 30, 45, TimeSpan.Zero),
+                ["Mon, 15 Jan 2024 14:30:45 +05:00"] = new DateTimeOffset(2024, 1, 15, 14, 30, 45, TimeSpan.FromHours(5)),
+
                 // Date-only
                 ["2024-01-15"] = new DateTimeOffset(2024, 1, 15, 0, 0, 0, TimeSpan.Zero),
             };
@@ -368,12 +372,17 @@ namespace Test.Shared
                 "",
                 "   ",
                 "not-a-date",
-                "2024-13-01",
-                "2024-01-32",
-                "2024-02-30",
-                "2023-02-29",
-                "2024-01-15 25:00:00",
+                "2024-13-01",           // invalid month
+                "2024-01-32",           // invalid day
+                "2024-02-30",           // invalid day for February
+                "2023-02-29",           // not a leap year
+                "2024-01-15 25:00:00",  // invalid hour
+                "2024-01-15 14:60:00",  // invalid minute
+                "2024-01-15 14:30:60",  // invalid second
                 "abc123xyz",
+                "2024/01/15/14/30/45",  // too many separators
+                "2024--01--15",
+                "99999999999999999999999999", // numeric overflow (not a valid tick/Unix value)
             };
 
             int i = 0;

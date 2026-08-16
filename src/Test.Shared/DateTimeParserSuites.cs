@@ -145,6 +145,9 @@ namespace Test.Shared
                 ["2024-01-15 2:30:45 PM"] = Base,
                 ["2024-01-15 02:30:45 PM"] = Base,
 
+                // RFC 1123 (default format present in the list). 2024-01-15 is a Monday.
+                ["Mon, 15 Jan 2024 14:30:45"] = Base,
+
                 // Compact formats
                 ["20240115T143045Z"] = Base,
                 ["20240115T143045"] = Base,
