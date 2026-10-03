@@ -336,4 +336,4 @@ Contributions are welcome! Please feel free to submit issues or pull requests.
 
 ## Version
 
-Current version: 1.0.0 - See [CHANGELOG.md](CHANGELOG.md) for version history.
+Current version: 1.0.3 - See [CHANGELOG.md](CHANGELOG.md) for version history.

@@ -20,6 +20,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README.md updated with comprehensive DateTimeOffsetParser documentation and examples
 - Added logo to README.md with attribution
 
+## [1.0.3] - 2026-10-03
+
+### Changed
+- Updated test dependencies (no changes to the library's runtime dependencies or public API):
+  - Touchstone.Core / Touchstone.Cli / Touchstone.NunitAdapter 0.1.12 -> 0.2.0
+  - NUnit 4.6.1 -> 5.0.0; NUnit3TestAdapter 6.2.0 -> 6.3.0
+  - xunit.v3 4.0.0 -> 4.0.1
+  - Microsoft.NET.Test.Sdk 18.9.0 -> 18.10.1
+  - Microsoft.Testing.Platform (and extensions) 2.3.3 -> 2.4.1
+  - Microsoft.Bcl.AsyncInterfaces, System.Diagnostics.DiagnosticSource, Microsoft.Extensions.DependencyModel 10.0.11 -> 10.0.12
+- All 185 tests pass under xUnit, NUnit, and Touchstone automated runners
+
 ## [1.0.0] - 2025-01-05
 
 ### Added
