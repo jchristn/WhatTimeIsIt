@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<Version>1.0.3</Version>
+		<Version>1.0.4</Version>
 		<TargetFrameworks>netstandard2.0;netstandard2.1;net8.0</TargetFrameworks>
 		<ApplicationIcon>logo.ico</ApplicationIcon>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Title>WhatTimeIsIt</Title>
 		<Authors>jchristn</Authors>
 		<Description>Library for parsing DateTime and DateTimeOffset strings from various database systems and standard formats while preserving microsecond precision and timezone offsets.</Description>
-		<Copyright>(c)2025 Joel Christner</Copyright>
+		<Copyright>(c)2026 Joel Christner</Copyright>
 		<PackageProjectUrl>https://github.com/jchristn/whattimeisit</PackageProjectUrl>
 		<PackageIcon>logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
@@ -19,6 +19,10 @@
 		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
 		<IncludeSymbols>True</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
 	<ItemGroup>
